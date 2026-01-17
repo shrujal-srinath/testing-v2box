@@ -1,25 +1,31 @@
 import React from 'react';
+import { useParams } from 'react-router-dom';
 import { GameClock } from './GameClock';
 import { TeamScoreCard } from './TeamScoreCard';
 import { useBasketballGame } from '../hooks/useBasketballGame';
 
 export const Scoreboard: React.FC = () => {
-  const game = useBasketballGame("TEST_GAME_1");
+  // 1. Get the Game Code from the URL
+  const { gameCode } = useParams(); 
+  
+  // 2. Connect to the Cloud using that specific code
+  // If no code is found (rare), it defaults to "DEMO"
+  const game = useBasketballGame(gameCode || "DEMO");
 
   // --- LOGIC: Period Transition ---
   const handleNextPeriod = () => {
     const current = game.gameState.period;
     
-    // Logic for Regular Game End (Quarter 4 or Half 2)
-    if (current === 4) { // Assuming Quarters
+    // End of Regulation (Q4)
+    if (current === 4) { 
       const goOT = window.confirm("End of Regulation!\n\nClick OK for OVERTIME.\nClick Cancel to RESET to Quarter 1.");
       if (goOT) {
-        game.setPeriod(5); // 5 = OT1
+        game.setPeriod(5); // 5 represents OT1
       } else {
-        game.setPeriod(1); // Back to start
+        game.setPeriod(1); // Reset to Q1
       }
     } 
-    // Logic for Overtime (Period 5+)
+    // End of Overtime (OT1 is 5, OT2 is 6, etc.)
     else if (current >= 5) {
       const goNextOT = window.confirm(`End of OT ${current - 4}!\n\nClick OK for NEXT OVERTIME.\nClick Cancel to RESET to Quarter 1.`);
       if (goNextOT) {
@@ -28,13 +34,13 @@ export const Scoreboard: React.FC = () => {
         game.setPeriod(1);
       }
     } 
-    // Regular Period Change (1 -> 2, 2 -> 3)
+    // Normal Quarter Change (Q1->Q2, etc.)
     else {
       game.setPeriod(current + 1);
     }
   };
 
-  // Helper to display period name
+  // Helper to show "Q1", "OT1" instead of numbers
   const getPeriodName = (p: number) => {
     if (p <= 4) return `Q${p}`;
     return `OT${p - 4}`;
@@ -167,7 +173,7 @@ export const Scoreboard: React.FC = () => {
         
         .counter { 
           display: flex; align-items: center; gap: 10px; 
-          background: #333; padding: 5px 10px; borderRadius: 8px; 
+          background: #333; padding: 5px 10px; border-radius: 8px; 
         }
         .counter button {
           width: 30px; height: 30px; border: none; background: #555; color: white;

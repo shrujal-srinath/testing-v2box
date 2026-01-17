@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { BasketballGame } from '../types';
+// FIXED LINE BELOW: Added 'type' keyword
+import type { BasketballGame } from '../types';
 import { subscribeToGame, updateGameField, createGame } from '../services/gameService';
 
+// ... rest of the file stays the same
 const INITIAL_GAME: BasketballGame = {
   hostId: null,
   code: "DEMO",
@@ -11,7 +13,14 @@ const INITIAL_GAME: BasketballGame = {
   settings: { gameName: "Demo Game", periodDuration: 12, shotClockDuration: 24, periodType: "quarter" },
   teamA: { name: "Team A", color: "#EA4335", score: 0, timeouts: 7, fouls: 0 },
   teamB: { name: "Team B", color: "#4285F4", score: 0, timeouts: 7, fouls: 0 },
-  gameState: { period: 1, gameTime: { minutes: 12, seconds: 0 }, shotClock: 24, possession: "A", gameRunning: false, shotClockRunning: false },
+  gameState: { 
+    period: 1, 
+    gameTime: { minutes: 12, seconds: 0 }, 
+    shotClock: 24, 
+    possession: "A", // Now matches 'A' | 'B' in types.ts
+    gameRunning: false, 
+    shotClockRunning: false 
+  },
   lastUpdate: Date.now()
 };
 
@@ -19,19 +28,25 @@ export const useBasketballGame = (gameCode: string) => {
   const [game, setGame] = useState<BasketballGame | null>(null);
 
   useEffect(() => {
-    createGame(gameCode, INITIAL_GAME).catch(() => console.log("Game likely exists"));
-    const unsubscribe = subscribeToGame(gameCode, (data) => setGame(data));
+    // 1. Try to create the game. If it fails (because it exists), that's fine.
+    createGame(gameCode, INITIAL_GAME).catch((err) => console.log("Game check:", err));
+
+    // 2. Subscribe to updates
+    const unsubscribe = subscribeToGame(gameCode, (data) => {
+      setGame(data);
+    });
+
     return () => unsubscribe();
   }, [gameCode]);
 
-  // If loading...
+  // If loading, return the default structure immediately so the app doesn't crash
   if (!game) return { 
     ...INITIAL_GAME, 
     updateScore: () => {}, 
     updateFouls: () => {}, 
-    updateTimeouts: () => {}, // NEW
+    updateTimeouts: () => {},
     togglePossession: () => {}, 
-    setPeriod: () => {}       // NEW
+    setPeriod: () => {} 
   };
 
   // --- ACTIONS ---
@@ -48,20 +63,19 @@ export const useBasketballGame = (gameCode: string) => {
     updateGameField(gameCode, `${teamKey}.fouls`, newFouls);
   };
 
-  // NEW: Handle Timeouts
   const updateTimeouts = (team: 'A' | 'B', change: number) => {
     const teamKey = team === 'A' ? 'teamA' : 'teamB';
-    // Usually timeouts don't go below 0 or above 7
     const newTimeouts = Math.max(0, Math.min(7, game[teamKey].timeouts + change));
     updateGameField(gameCode, `${teamKey}.timeouts`, newTimeouts);
   };
 
   const togglePossession = () => {
-    const newPoss = game.gameState.possession === 'A' ? 'B' : 'A';
+    // Read from gameState, NOT the root
+    const currentPoss = game.gameState.possession; 
+    const newPoss = currentPoss === 'A' ? 'B' : 'A';
     updateGameField(gameCode, 'gameState.possession', newPoss);
   };
 
-  // NEW: Manual Period Setter (for our logic)
   const setPeriod = (newPeriod: number) => {
     updateGameField(gameCode, 'gameState.period', newPeriod);
   };
@@ -70,8 +84,8 @@ export const useBasketballGame = (gameCode: string) => {
     ...game,
     updateScore,
     updateFouls,
-    updateTimeouts, // Exported
+    updateTimeouts,
     togglePossession,
-    setPeriod // Exported
+    setPeriod
   };
 };

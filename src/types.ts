@@ -1,4 +1,3 @@
-// Defines the structure of the Game Timer & Status
 export interface GameState {
   period: number;
   gameTime: {
@@ -6,12 +5,11 @@ export interface GameState {
     seconds: number;
   };
   shotClock: number;
-  possession: 'teamA' | 'teamB';
+  possession: 'A' | 'B';
   gameRunning: boolean;
   shotClockRunning: boolean;
 }
 
-// Defines what a Team looks like
 export interface TeamData {
   name: string;
   color: string;
@@ -20,7 +18,7 @@ export interface TeamData {
   fouls: number;
 }
 
-// The Master Object for the entire game
+// Ensure 'export' is here!
 export interface BasketballGame {
   hostId: string | null;
   code: string;
