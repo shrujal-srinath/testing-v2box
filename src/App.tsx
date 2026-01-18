@@ -4,8 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // Page Imports
 import { LandingPage } from './pages/LandingPage';
 import { Dashboard } from './pages/Dashboard';
-import { SetupPage } from './pages/SetupPage';
-import { HostConsole } from './pages/HostConsole';
+import { GameSetup } from './pages/GameSetup';
 import { SpectatorView } from './pages/SpectatorView';
 
 function App() {
@@ -20,10 +19,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
 
           {/* Game Configuration (New Game) */}
-          <Route path="/setup" element={<SetupPage />} />
-
-          {/* The Host's Control Screen (Protected or Free Mode) */}
-          <Route path="/host/:gameId" element={<HostConsole />} />
+          <Route path="/setup" element={<GameSetup />} />
 
           {/* Public Spectator Screen */}
           <Route path="/watch/:gameId" element={<SpectatorView />} />
