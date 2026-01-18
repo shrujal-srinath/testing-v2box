@@ -1,73 +1,90 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useBasketballGame } from '../hooks/useBasketballGame';
+import { TeamScoreCard } from '../components/TeamScoreCard';
+import { GameClock } from '../components/GameClock'; // We reuse the style, but override the time
+import { ShotClock } from '../components/ShotClock';
 
-// A simple display card for spectators (No buttons)
-const ReadOnlyCard = ({ name, score, color, fouls }: any) => (
-  <div style={{ 
-    textAlign: 'center', border: `2px solid ${color}`, borderRadius: '12px',
-    padding: '20px', minWidth: '200px', background: '#1a1a1a'
-  }}>
-    <h2 style={{ color: color, fontSize: '1.5rem' }}>{name}</h2>
-    <div style={{ fontSize: '5rem', fontWeight: 'bold', color: 'white' }}>{score}</div>
-    <div style={{ color: '#888' }}>FOULS: <span style={{ color: 'white' }}>{fouls}</span></div>
-  </div>
-);
+// A Special Wrapper to force GameClock to show DB time, not internal time
+const SpectatorClock = ({ minutes, seconds, tenths }: any) => {
+  const showTenths = minutes === 0 && seconds < 60;
+  const formatTime = (n: number) => n.toString().padStart(2, '0');
+  
+  return (
+    <div className="flex flex-col items-center bg-gray-900 border-4 border-gray-800 rounded-xl p-6 w-full max-w-sm mx-auto shadow-2xl">
+      <div className="text-7xl font-mono font-bold tracking-widest text-white">
+        {showTenths ? <span>{seconds}.{tenths}</span> : <span>{formatTime(minutes)}:{formatTime(seconds)}</span>}
+      </div>
+    </div>
+  );
+};
 
 export const SpectatorView: React.FC = () => {
-  const { gameCode } = useParams(); // Get code from URL
+  const { gameCode } = useParams();
   const game = useBasketballGame(gameCode || "DEMO");
 
   const getPeriodName = (p: number) => (p <= 4 ? `Q${p}` : `OT${p - 4}`);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#000', padding: '20px', fontFamily: 'sans-serif' }}>
+    <div className="min-h-screen bg-black text-white p-6 font-sans flex flex-col items-center justify-center">
       
       {/* HEADER */}
-      <div style={{ textAlign: 'center', color: '#666', marginBottom: '40px' }}>
-        <div>LIVE GAME</div>
-        <div style={{ fontSize: '2rem', color: 'white', letterSpacing: '5px' }}>{gameCode}</div>
+      <div className="mb-8 text-center">
+        <div className="text-gray-500 text-sm tracking-[0.5em] uppercase mb-2">Live Broadcast</div>
+        <h1 className="text-4xl font-bold text-white tracking-widest">{game.settings.gameName}</h1>
       </div>
 
-      {/* SCOREBOARD */}
-      <div style={{ 
-        display: 'flex', justifyContent: 'center', alignItems: 'center', 
-        gap: '20px', flexWrap: 'wrap' 
-      }}>
-        <ReadOnlyCard 
+      {/* SCOREBOARD ROW */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-12 items-center w-full max-w-7xl">
+        
+        {/* TEAM A */}
+        <TeamScoreCard 
           name={game.teamA.name} 
-          score={game.teamA.score} 
           color={game.teamA.color} 
-          fouls={game.teamA.fouls}
+          score={game.teamA.score} 
+          readonly={true} // Hides buttons
         />
 
-        {/* CLOCK AREA */}
-        <div style={{ textAlign: 'center', minWidth: '150px' }}>
-           <div style={{ 
-            background: '#333', color: 'white', padding: '5px 15px', 
-            borderRadius: '20px', display: 'inline-block', marginBottom: '10px'
-          }}>
+        {/* CENTER STAGE */}
+        <div className="flex flex-col items-center gap-8">
+          <div className="bg-gray-800 px-8 py-2 rounded-full text-2xl font-bold border border-gray-700">
             {getPeriodName(game.gameState.period)}
           </div>
           
-          <div style={{ fontSize: '4rem', fontFamily: 'monospace', color: '#0f0' }}>
-             {/* We can reuse GameClock here later, but simple text for now */}
-             {String(game.gameState.gameTime.minutes).padStart(2,'0')}:
-             {String(game.gameState.gameTime.seconds).padStart(2,'0')}
+          <SpectatorClock 
+            minutes={game.gameState.gameTime.minutes} 
+            seconds={game.gameState.gameTime.seconds} 
+            tenths={game.gameState.gameTime.tenths} 
+          />
+          
+          <div className="scale-125">
+            <ShotClock seconds={game.gameState.shotClock} readonly={true} />
           </div>
 
-          <div style={{ marginTop: '20px', fontSize: '2rem', color: 'white' }}>
-             {game.gameState.possession === 'A' ? '◄' : '►'}
+          {/* Possession */}
+          <div className="mt-4 flex flex-col items-center">
+            <span className="text-gray-600 text-xs tracking-widest mb-2">POSSESSION</span>
+            <div className="text-5xl" style={{ color: game.gameState.possession === 'A' ? game.teamA.color : game.teamB.color }}>
+              {game.gameState.possession === 'A' ? '◄' : '►'}
+            </div>
           </div>
         </div>
 
-        <ReadOnlyCard 
+        {/* TEAM B */}
+        <TeamScoreCard 
           name={game.teamB.name} 
-          score={game.teamB.score} 
           color={game.teamB.color} 
-          fouls={game.teamB.fouls}
+          score={game.teamB.score} 
+          readonly={true} // Hides buttons
         />
       </div>
+
+      {/* FOOTER STATS */}
+      <div className="mt-16 flex gap-20 text-gray-400 font-mono text-xl">
+        <div>{game.teamA.name} FOULS: <span className="text-white">{game.teamA.fouls}</span></div>
+        <div>{game.teamB.name} FOULS: <span className="text-white">{game.teamB.fouls}</span></div>
+      </div>
+
     </div>
   );
 };

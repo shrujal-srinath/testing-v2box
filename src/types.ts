@@ -1,23 +1,31 @@
+export interface Player {
+  id: string;
+  name: string;
+  number: string;
+  points: number;
+  fouls: number;
+}
+
 export interface GameState {
   period: number;
   gameTime: {
     minutes: number;
     seconds: number;
-    tenths: number; // NEW
+    tenths: number;
   };
-  shotClock: number; // Stays as a number (e.g. 24.0)
+  shotClock: number;
   possession: 'A' | 'B';
   gameRunning: boolean;
   shotClockRunning: boolean;
 }
 
-// ... (Keep TeamData and BasketballGame exactly as they were)
 export interface TeamData {
   name: string;
   color: string;
   score: number;
   timeouts: number;
   fouls: number;
+  players: Player[]; // NEW: Roster List
 }
 
 export interface BasketballGame {

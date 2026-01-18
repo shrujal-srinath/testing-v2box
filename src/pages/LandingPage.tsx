@@ -1,74 +1,67 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+// ... imports
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [joinCode, setJoinCode] = useState('');
 
   const handleHost = () => {
-    // Generate a random 6-digit code
-    const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
-    navigate(`/host/${randomCode}`);
+    // NEW: Go to Setup instead of generating code immediately
+    navigate('/setup');
   };
 
+// ... rest of the file is the same
   const handleWatch = () => {
-    if (joinCode.length === 6) {
-      navigate(`/watch/${joinCode}`);
-    } else {
-      alert("Please enter a valid 6-digit code");
-    }
+    if (joinCode.length === 6) navigate(`/watch/${joinCode}`);
+    else alert("Please enter a valid 6-digit code");
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', background: '#000', color: 'white', 
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      gap: '2rem', fontFamily: 'sans-serif'
-    }}>
-      <h1 style={{ fontSize: '3rem', letterSpacing: '5px' }}>BOX V2</h1>
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
       
-      {/* HOST SECTION */}
-      <div style={{ background: '#222', padding: '2rem', borderRadius: '15px', textAlign: 'center', width: '300px' }}>
-        <h2>🎯 Host Game</h2>
-        <p style={{ color: '#aaa' }}>Create a new game and control the score.</p>
-        <button 
-          onClick={handleHost}
-          style={{ 
-            width: '100%', padding: '15px', marginTop: '10px',
-            background: '#EA4335', color: 'white', border: 'none', 
-            borderRadius: '8px', fontSize: '1.2rem', cursor: 'pointer' 
-          }}
-        >
-          Create Game
-        </button>
+      {/* HERO SECTION */}
+      <div className="text-center mb-16">
+        <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
+          BOX V2
+        </h1>
+        <p className="text-gray-400 text-lg tracking-[0.2em] uppercase">Next Gen Sports Telemetry</p>
       </div>
 
-      {/* WATCH SECTION */}
-      <div style={{ background: '#222', padding: '2rem', borderRadius: '15px', textAlign: 'center', width: '300px' }}>
-        <h2>👁️ Watch Game</h2>
-        <p style={{ color: '#aaa' }}>Enter code to watch live.</p>
-        <input 
-          type="text" 
-          placeholder="123456" 
-          maxLength={6}
-          value={joinCode}
-          onChange={(e) => setJoinCode(e.target.value)}
-          style={{ 
-            width: '90%', padding: '15px', margin: '10px 0',
-            textAlign: 'center', fontSize: '1.5rem', letterSpacing: '5px',
-            borderRadius: '8px', border: 'none'
-          }}
-        />
-        <button 
-          onClick={handleWatch}
-          style={{ 
-            width: '100%', padding: '15px',
-            background: '#4285F4', color: 'white', border: 'none', 
-            borderRadius: '8px', fontSize: '1.2rem', cursor: 'pointer' 
-          }}
-        >
-          Watch Live
-        </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+        
+        {/* HOST CARD */}
+        <div className="bg-gray-900/50 border border-gray-800 p-8 rounded-2xl hover:border-blue-500/50 transition-all group cursor-pointer" onClick={handleHost}>
+          <div className="text-4xl mb-4">🎯</div>
+          <h2 className="text-2xl font-bold mb-2 text-white group-hover:text-blue-400">Host a Game</h2>
+          <p className="text-gray-500 mb-6">Create a new match, control the scoreboard, and broadcast live.</p>
+          <button className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-colors">
+            Create New Game
+          </button>
+        </div>
+
+        {/* WATCH CARD */}
+        <div className="bg-gray-900/50 border border-gray-800 p-8 rounded-2xl hover:border-purple-500/50 transition-all">
+          <div className="text-4xl mb-4">👁️</div>
+          <h2 className="text-2xl font-bold mb-2 text-white">Spectator View</h2>
+          <p className="text-gray-500 mb-6">Enter a game code to watch the live scoreboard sync in real-time.</p>
+          
+          <div className="flex gap-2">
+            <input 
+              type="text" 
+              placeholder="123456" 
+              maxLength={6}
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value)}
+              className="w-full bg-black border border-gray-700 rounded-lg px-4 text-center text-xl font-mono focus:border-purple-500 focus:outline-none"
+            />
+            <button 
+              onClick={handleWatch}
+              className="px-6 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold transition-colors"
+            >
+              GO
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );

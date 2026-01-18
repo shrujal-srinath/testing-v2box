@@ -1,6 +1,5 @@
-import { doc, onSnapshot, setDoc, updateDoc } from "firebase/firestore"; 
+import { doc, getDoc, onSnapshot, setDoc, updateDoc } from "firebase/firestore"; // Added getDoc
 import { db } from "./firebase";
-// FIXED LINE BELOW: Added 'type' keyword
 import type { BasketballGame } from "../types";
 
 export const subscribeToGame = (gameId: string, callback: (data: BasketballGame) => void) => {
@@ -18,6 +17,14 @@ export const updateGameField = async (gameId: string, fieldPath: string, value: 
   });
 };
 
+// UPDATED: Only create if it doesn't exist!
 export const createGame = async (gameId: string, initialData: BasketballGame) => {
-  await setDoc(doc(db, "games", gameId), initialData);
+  const gameRef = doc(db, "games", gameId);
+  const docSnap = await getDoc(gameRef);
+
+  if (!docSnap.exists()) {
+    await setDoc(gameRef, initialData);
+  } else {
+    console.log("Game already exists, skipping creation.");
+  }
 };
