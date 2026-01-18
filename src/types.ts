@@ -3,13 +3,15 @@ export interface GameState {
   gameTime: {
     minutes: number;
     seconds: number;
+    tenths: number; // NEW
   };
-  shotClock: number;
+  shotClock: number; // Stays as a number (e.g. 24.0)
   possession: 'A' | 'B';
   gameRunning: boolean;
   shotClockRunning: boolean;
 }
 
+// ... (Keep TeamData and BasketballGame exactly as they were)
 export interface TeamData {
   name: string;
   color: string;
@@ -18,7 +20,6 @@ export interface TeamData {
   fouls: number;
 }
 
-// Ensure 'export' is here!
 export interface BasketballGame {
   hostId: string | null;
   code: string;
