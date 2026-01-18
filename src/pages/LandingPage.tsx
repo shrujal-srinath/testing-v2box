@@ -1,18 +1,21 @@
-// ... imports
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [joinCode, setJoinCode] = useState('');
 
   const handleHost = () => {
-    // NEW: Go to Setup instead of generating code immediately
+    // Go to Setup instead of generating code immediately
     navigate('/setup');
   };
 
-// ... rest of the file is the same
   const handleWatch = () => {
-    if (joinCode.length === 6) navigate(`/watch/${joinCode}`);
-    else alert("Please enter a valid 6-digit code");
+    if (joinCode.length === 6) {
+      navigate(`/watch/${joinCode}`);
+    } else {
+      alert("Please enter a valid 6-digit code");
+    }
   };
 
   return (
