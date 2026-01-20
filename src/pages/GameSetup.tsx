@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { createGame } from '../services/gameService';
+import { auth } from '../services/firebase'; // Added import for dynamic hostId
 import type { BasketballGame, TeamData, Player } from '../types';
 
 // Preset Colors
@@ -129,39 +130,59 @@ export const GameSetup: React.FC = () => {
 
   const finalizeAndLaunch = async () => {
     setIsSubmitting(true);
-    const gameCode = Math.floor(100000 + Math.random() * 900000).toString();
+    setErrorMsg(null);
 
-    const finalGameName = gameName.trim() || "LEAGUE MATCH 01";
-    const finalTeamA = teamAName.trim() || "TEAM A";
-    const finalTeamB = teamBName.trim() || "TEAM B";
+    try {
+      const gameCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-    const newGame: BasketballGame = {
-      hostId: "host-user", 
-      code: gameCode,
-      gameType: trackStats ? "pro" : "standard",
-      sport: sportType,
-      status: "live",
-      settings: { 
-        gameName: finalGameName, 
-        periodDuration: periodDuration, 
-        shotClockDuration: shotClockEnabled ? shotClockDuration : 0, 
-        periodType: periodType 
-      },
-      teamA: { name: finalTeamA, color: teamAColor, score: 0, timeouts: 7, fouls: 0, players: trackStats ? rosterA : [] } as TeamData,
-      teamB: { name: finalTeamB, color: teamBColor, score: 0, timeouts: 7, fouls: 0, players: trackStats ? rosterB : [] } as TeamData,
-      gameState: { 
-        period: 1, 
-        gameTime: { minutes: periodDuration, seconds: 0, tenths: 0 }, 
-        shotClock: shotClockEnabled ? shotClockDuration : 0, 
-        possession: 'A', 
-        gameRunning: false, 
-        shotClockRunning: false 
-      },
-      lastUpdate: Date.now()
-    };
+      const finalGameName = gameName.trim() || "LEAGUE MATCH 01";
+      const finalTeamA = teamAName.trim() || "TEAM A";
+      const finalTeamB = teamBName.trim() || "TEAM B";
 
-    await createGame(gameCode, newGame);
-    navigate(`/host/${gameCode}`);
+      // Dynamically get the Host ID (Logged in user OR Guest fallback)
+      const currentHostId = auth.currentUser?.uid || "guest-operator";
+
+      const newGame: BasketballGame = {
+        hostId: currentHostId, 
+        code: gameCode,
+        gameType: trackStats ? "pro" : "standard",
+        sport: sportType,
+        status: "live",
+        settings: { 
+          gameName: finalGameName, 
+          periodDuration: periodDuration, 
+          shotClockDuration: shotClockEnabled ? shotClockDuration : 0, 
+          periodType: periodType 
+        },
+        teamA: { name: finalTeamA, color: teamAColor, score: 0, timeouts: 7, fouls: 0, players: trackStats ? rosterA : [] } as TeamData,
+        teamB: { name: finalTeamB, color: teamBColor, score: 0, timeouts: 7, fouls: 0, players: trackStats ? rosterB : [] } as TeamData,
+        gameState: { 
+          period: 1, 
+          gameTime: { minutes: periodDuration, seconds: 0, tenths: 0 }, 
+          shotClock: shotClockEnabled ? shotClockDuration : 0, 
+          possession: 'A', 
+          gameRunning: false, 
+          shotClockRunning: false 
+        },
+        lastUpdate: Date.now()
+      };
+
+      await createGame(gameCode, newGame);
+      console.log("Game created successfully:", gameCode);
+      navigate(`/host/${gameCode}`);
+    } catch (error: any) {
+      console.error("Launch Error:", error);
+      
+      let friendlyError = "Failed to launch game server.";
+      if (error.code === 'permission-denied') {
+        friendlyError = "Permission denied. Please check your login status or connection.";
+      } else if (error.message) {
+        friendlyError = error.message;
+      }
+
+      alert(`Error: ${friendlyError}`);
+      setIsSubmitting(false); // Reset loading state so user can try again
+    }
   };
 
   // --- SUB COMPONENTS ---
@@ -307,7 +328,7 @@ export const GameSetup: React.FC = () => {
                             <div className="bg-black border border-zinc-800 rounded-lg p-2">
                                <div className="h-12 flex items-center justify-center font-mono text-3xl font-bold text-white mb-1">
                                  {shotClockDuration}
-                               </div>
+                                </div>
                                <button onClick={() => openTimeEditor('shot')} className="w-full text-[9px] font-bold text-zinc-500 hover:text-blue-400 uppercase tracking-widest py-1 transition-colors">✎ Edit Time</button>
                             </div>
                         </div>
@@ -521,7 +542,11 @@ export const GameSetup: React.FC = () => {
 
               <div className="p-6 bg-black border-t border-zinc-800 flex justify-end gap-4">
                  <button onClick={() => setShowConfirmation(false)} className="px-6 py-3 rounded border border-zinc-700 text-zinc-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Edit</button>
-                 <button onClick={finalizeAndLaunch} className="px-8 py-3 rounded bg-green-600 hover:bg-green-500 text-white text-xs font-black uppercase tracking-widest shadow-lg transition-transform hover:-translate-y-0.5">
+                 <button 
+                    onClick={finalizeAndLaunch} 
+                    disabled={isSubmitting}
+                    className="px-8 py-3 rounded bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black uppercase tracking-widest shadow-lg transition-transform hover:-translate-y-0.5"
+                 >
                     {isSubmitting ? "Booting..." : "Launch Match"}
                  </button>
               </div>

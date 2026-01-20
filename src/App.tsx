@@ -7,7 +7,7 @@ import { Dashboard } from './pages/Dashboard';
 import { GameSetup } from './pages/GameSetup';
 import { SpectatorView } from './pages/SpectatorView';
 
-// Host Console Import (Using your Scoreboard component as the host interface)
+// Import the Scoreboard (Host Console)
 import { Scoreboard } from './components/Scoreboard';
 
 function App() {
@@ -21,11 +21,11 @@ function App() {
           {/* Private Operator Dashboard */}
           <Route path="/dashboard" element={<Dashboard />} />
 
-          {/* Game Configuration (New Game Setup) */}
+          {/* Game Configuration (New Game) */}
           <Route path="/setup" element={<GameSetup />} />
 
-          {/* The Host's Control Screen (Protected or Free Mode) */}
-          {/* Matches navigate('/host/${gameCode}') from GameSetup/Dashboard */}
+          {/* === THE MISSING LINK === */}
+          {/* This tells the app what to show when you navigate to /host/... */}
           <Route path="/host/:gameCode" element={<Scoreboard />} />
 
           {/* Public Spectator Screen */}

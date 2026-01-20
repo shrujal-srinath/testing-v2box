@@ -1,8 +1,12 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { 
+  getFirestore, 
+  initializeFirestore, 
+  persistentLocalCache, 
+  persistentMultipleTabManager 
+} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
-// Your real configuration
 const firebaseConfig = {
   apiKey: "AIzaSyAwH0ryk7YUvx37l2446J6MYOcnYzg-2gg",
   authDomain: "the-box-v2.firebaseapp.com",
@@ -15,7 +19,16 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+
+// FIX: Initialize Firestore with settings to bypass strict firewalls
+// We use experimentalForceLongPolling to work on restricted networks (like BMSCE wifi)
+const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true, // <--- THE KEY FIX
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+});
+
 const auth = getAuth(app);
 
 export { db, auth };
