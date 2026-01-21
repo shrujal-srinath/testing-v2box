@@ -10,11 +10,11 @@ const INITIAL_GAME: BasketballGame = {
   status: "live",
   settings: { gameName: "Demo Game", periodDuration: 10, shotClockDuration: 24, periodType: "quarter" },
   teamA: { 
-    name: "Team A", color: "#EA4335", score: 0, timeouts: 7, fouls: 0,
+    name: "Team A", color: "#EA4335", score: 0, timeouts: 5, fouls: 0, // FIBA Default: 5
     players: [] 
   },
   teamB: { 
-    name: "Team B", color: "#4285F4", score: 0, timeouts: 7, fouls: 0,
+    name: "Team B", color: "#4285F4", score: 0, timeouts: 5, fouls: 0, 
     players: [] 
   },
   gameState: { 
@@ -32,28 +32,16 @@ export const useBasketballGame = (gameCode: string) => {
   const [game, setGame] = useState<BasketballGame | null>(null);
 
   useEffect(() => {
-    // 1. Try to create the game. If it fails (because it exists), that's fine.
     createGame(gameCode, INITIAL_GAME).catch((err) => console.log("Game check:", err));
-
-    // 2. Subscribe to updates
-    const unsubscribe = subscribeToGame(gameCode, (data) => {
-      setGame(data);
-    });
-
+    const unsubscribe = subscribeToGame(gameCode, (data) => setGame(data));
     return () => unsubscribe();
   }, [gameCode]);
 
-  // If loading, return the default structure immediately so the app doesn't crash
   if (!game) return { 
     ...INITIAL_GAME, 
-    updateScore: () => {}, 
-    updateFouls: () => {}, 
-    updateTimeouts: () => {},
-    togglePossession: () => {}, 
-    setPeriod: () => {},
-    updateGameTime: () => {},
-    resetShotClock: () => {},
-    updatePlayerStats: () => {}
+    updateScore: () => {}, updateFouls: () => {}, updateTimeouts: () => {},
+    togglePossession: () => {}, setPeriod: () => {}, updateGameTime: () => {},
+    resetShotClock: () => {}, updatePlayerStats: () => {}, toggleTimer: () => {}, setGameTime: () => {}
   };
 
   // --- ACTIONS ---
@@ -70,9 +58,10 @@ export const useBasketballGame = (gameCode: string) => {
     updateGameField(gameCode, `${teamKey}.fouls`, newFouls);
   };
 
+  // FIBA Rule: Max 5 Timeouts (2 First Half, 3 Second Half)
   const updateTimeouts = (team: 'A' | 'B', change: number) => {
     const teamKey = team === 'A' ? 'teamA' : 'teamB';
-    const newTimeouts = Math.max(0, Math.min(7, game[teamKey].timeouts + change));
+    const newTimeouts = Math.max(0, Math.min(5, game[teamKey].timeouts + change));
     updateGameField(gameCode, `${teamKey}.timeouts`, newTimeouts);
   };
 
@@ -85,19 +74,35 @@ export const useBasketballGame = (gameCode: string) => {
     updateGameField(gameCode, 'gameState.period', newPeriod);
   };
 
-  // The Game Clock Tick
+  // 1. TICK: Used by the interval loop to count down
   const updateGameTime = (m: number, s: number, t: number) => {
-    // 1. Calculate new Shot Clock
     let newShotClock = game.gameState.shotClock;
-    if (newShotClock > 0) {
-      // Decrease by 0.1s
-      newShotClock = parseFloat((newShotClock - 0.1).toFixed(1));
+    if (game.gameState.shotClockRunning && newShotClock > 0) {
+      newShotClock = parseFloat((newShotClock - 1).toFixed(1)); // Tick down 1s
     }
-
     updateGameField(gameCode, 'gameState', {
       ...game.gameState,
       gameTime: { minutes: m, seconds: s, tenths: t },
-      shotClock: newShotClock
+      shotClock: Math.max(0, newShotClock)
+    });
+  };
+
+  // 2. SET: Used by Edit Modal to force time without side effects
+  const setGameTime = (m: number, s: number, shot: number) => {
+    updateGameField(gameCode, 'gameState', {
+      ...game.gameState,
+      gameTime: { minutes: m, seconds: s, tenths: 0 },
+      shotClock: shot
+    });
+  };
+
+  // 3. TOGGLE: Explicitly flips the running state
+  const toggleTimer = () => {
+    const newState = !game.gameState.gameRunning;
+    updateGameField(gameCode, 'gameState', {
+      ...game.gameState,
+      gameRunning: newState,
+      shotClockRunning: newState // Usually synced
     });
   };
 
@@ -105,28 +110,20 @@ export const useBasketballGame = (gameCode: string) => {
     updateGameField(gameCode, 'gameState.shotClock', seconds);
   };
 
-  // === NEW: Player Stats Logic ===
   const updatePlayerStats = (team: 'A' | 'B', playerId: string, points: number, fouls: number) => {
     const teamKey = team === 'A' ? 'teamA' : 'teamB';
     const currentTeam = game[teamKey];
     
-    // 1. Update the specific player in the roster
     const updatedPlayers = currentTeam.players.map(p => {
       if (p.id === playerId) {
-        return { 
-          ...p, 
-          points: p.points + points, 
-          fouls: p.fouls + fouls 
-        };
+        return { ...p, points: p.points + points, fouls: p.fouls + fouls };
       }
       return p;
     });
 
-    // 2. Update Team Totals
     const newScore = Math.max(0, currentTeam.score + points);
     const newTeamFouls = Math.max(0, currentTeam.fouls + fouls);
 
-    // 3. Sync everything to Cloud
     updateGameField(gameCode, teamKey, {
       ...currentTeam,
       score: newScore,
@@ -143,7 +140,9 @@ export const useBasketballGame = (gameCode: string) => {
     togglePossession,
     setPeriod,
     updateGameTime,
+    setGameTime, // New export
+    toggleTimer, // New export
     resetShotClock,
-    updatePlayerStats // Exported!
+    updatePlayerStats
   };
 };

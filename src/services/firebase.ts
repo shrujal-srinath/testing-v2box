@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
 import { 
   initializeFirestore, 
   persistentLocalCache, 
@@ -6,23 +7,24 @@ import {
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
+// --- NEW CONFIGURATION (Project: boxv2-1) ---
 const firebaseConfig = {
-  apiKey: "AIzaSyAwH0ryk7YUvx37l2446J6MYOcnYzg-2gg",
-  authDomain: "the-box-v2.firebaseapp.com",
-  projectId: "the-box-v2",
-  storageBucket: "the-box-v2.firebasestorage.app",
-  messagingSenderId: "537547790625",
-  appId: "1:537547790625:web:b8faf300cc43b2eef54660",
-  measurementId: "G-QF3E2D6BTL"
+  apiKey: "AIzaSyBC9eer79l4s22UEoFhaR1Q9L6TNuVPdIw",
+  authDomain: "boxv2-1.firebaseapp.com",
+  projectId: "boxv2-1",
+  storageBucket: "boxv2-1.firebasestorage.app",
+  messagingSenderId: "54168657545",
+  appId: "1:54168657545:web:a84547766022c30449f058",
+  measurementId: "G-BE6020M5WD"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
-// FIX: Initialize Firestore with settings to bypass strict firewalls
-// We use experimentalForceLongPolling to work on restricted networks (like BMSCE wifi)
+// Initialize Firestore with robust settings (Fixes "Client Offline" issues)
 const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true, // <--- THE KEY FIX
+  experimentalForceLongPolling: true, // Keep this true for stability
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
   })
@@ -30,4 +32,4 @@ const db = initializeFirestore(app, {
 
 const auth = getAuth(app);
 
-export { db, auth };
+export { db, auth, analytics };

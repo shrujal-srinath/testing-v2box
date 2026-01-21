@@ -47,16 +47,11 @@ export const createGame = async (gameId: string, initialData: BasketballGame) =>
 
   try {
     const gameRef = doc(db, "games", gameId);
-    const docSnap = await getDoc(gameRef);
-
-    if (!docSnap.exists()) {
-      // ⚠️ FIX: Sanitize data before writing to prevent 'invalid data' errors
-      const cleanData = sanitize(initialData);
-      console.log("Attempting to write game data:", cleanData);
-      await setDoc(gameRef, cleanData);
-    } else {
-      throw new Error("Game Code already exists. Try again.");
-    }
+    // ⚠️ FIX: Sanitize data before writing to prevent 'invalid data' errors
+    const cleanData = sanitize(initialData);
+    console.log("Attempting to write game data:", cleanData);
+    await setDoc(gameRef, cleanData);
+    console.log("Game written successfully to:", gameId);
   } catch (error: any) {
     console.error("DETAILED WRITE ERROR:", error);
     throw error;
