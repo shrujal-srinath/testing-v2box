@@ -1,15 +1,46 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { TeamData, GameState } from '../types';
+import { Pencil, ChevronRight, Play, Pause, ArrowLeftRight } from 'lucide-react';
 
+// Define props for the component
 interface HardwareDeckProps {
-  teamA: TeamData;
-  teamB: TeamData;
+  teamA: TeamData; // Home
+  teamB: TeamData; // Guest
   gameState: GameState;
   onAction: (team: 'A' | 'B', type: 'points' | 'foul' | 'timeout', value: number) => void;
   onGameClock: (action: 'toggle' | 'reset', value?: any) => void;
   onShotClock: (action: 'reset-24' | 'reset-14') => void;
   onPossession: () => void;
+  onNextPeriod: () => void;
 }
+
+// Reusable Circular Button for Score
+const ScoreCircleBtn = ({ label, onClick, color }: { label: string; onClick: () => void; color: 'green' | 'red' }) => {
+  const gradient = color === 'green' ? 'from-green-600 to-green-800' : 'from-red-600 to-red-800';
+  const shadow = color === 'green' ? 'shadow-green-900' : 'shadow-red-900';
+  return (
+    <button
+      onClick={onClick}
+      className={`w-16 h-16 rounded-full bg-gradient-to-b ${gradient} text-white font-bold text-xl flex items-center justify-center shadow-lg ${shadow} active:translate-y-1 active:shadow-md transition-all border-2 border-white/20`}
+    >
+      {label}
+    </button>
+  );
+};
+
+// Reusable Rectangular Button
+const RectBtn = ({ label, icon, onClick, color = 'zinc', className = '' }: { label: string; icon?: React.ReactNode; onClick: () => void; color?: 'green' | 'red' | 'zinc'; className?: string }) => {
+  const bg = color === 'green' ? 'bg-green-800 hover:bg-green-700' : color === 'red' ? 'bg-red-800 hover:bg-red-700' : 'bg-zinc-800 hover:bg-zinc-700';
+  return (
+    <button
+      onClick={onClick}
+      className={`h-12 px-4 rounded-md ${bg} text-white font-semibold uppercase flex items-center justify-center gap-2 shadow-md active:translate-y-0.5 transition-all border border-white/10 ${className}`}
+    >
+      {icon && <span className="w-5 h-5">{icon}</span>}
+      {label}
+    </button>
+  );
+};
 
 export const HardwareDeck: React.FC<HardwareDeckProps> = ({
   teamA,
@@ -17,117 +48,167 @@ export const HardwareDeck: React.FC<HardwareDeckProps> = ({
   gameState,
   onAction,
   onGameClock,
-  onShotClock,
-  onPossession
+  onPossession,
+  onNextPeriod
 }) => {
   const [logs, setLogs] = useState<string[]>([]);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll the terminal log
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
 
-  // --- SIGNAL GENERATOR ---
   const sendSignal = (cmd: string, payload: any, callback: () => void) => {
-    // 1. Haptic Feedback (The "Click" Feel)
     if (navigator.vibrate) navigator.vibrate(50);
-
-    // 2. Serial Monitor Log
     const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
-    const logLine = `[${timestamp}] TX >> ${cmd} : ${JSON.stringify(payload)}`;
-    setLogs(prev => [...prev.slice(-8), logLine]); // Keep last 8 lines
-
-    // 3. Execute Logic
+    const logLine = `[${timestamp}] TX >> ${cmd}`;
+    setLogs(prev => [...prev.slice(-4), logLine]);
     callback();
   };
 
+  // Format game clock
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
   return (
-    <div className="flex flex-col h-screen w-screen bg-zinc-950 text-white select-none overflow-hidden font-mono">
+    <div className="flex flex-col h-screen w-screen bg-[#1a1a1a] text-white select-none overflow-hidden font-sans fixed inset-0" style={{ backgroundImage: 'radial-gradient(circle at center, #2a2a2a 0%, #1a1a1a 100%)' }}>
       
-      {/* === TOP PANEL: CONTROLS === */}
-      <div className="flex-1 grid grid-cols-12 gap-2 p-2">
-        
-        {/* TEAM A (RED) */}
-        <div className="col-span-4 flex flex-col gap-2 border border-zinc-800 p-2 rounded bg-zinc-900/50">
-          <div className="text-center font-black text-red-500 tracking-widest border-b border-zinc-800 pb-1 mb-1">{teamA.name.toUpperCase()}</div>
-          <div className="grid grid-cols-2 gap-2 flex-1">
-             <HardwareBtn color="red" label="+1" onClick={() => sendSignal("SCORE_A_1", {v:1}, () => onAction('A', 'points', 1))} />
-             <HardwareBtn color="red" label="+2" onClick={() => sendSignal("SCORE_A_2", {v:2}, () => onAction('A', 'points', 2))} />
-             <HardwareBtn color="red" label="+3" onClick={() => sendSignal("SCORE_A_3", {v:3}, () => onAction('A', 'points', 3))} />
-             <HardwareBtn color="zinc" label="UNDO" onClick={() => sendSignal("SCORE_A_UNDO", {v:-1}, () => onAction('A', 'points', -1))} />
+      {/* === TOP SCREEN === */}
+      <div className="h-1/3 bg-black border-b-4 border-zinc-800 relative overflow-hidden flex flex-col">
+        <div className="absolute inset-0 bg-[url('/scanlines.png')] opacity-10 pointer-events-none"></div>
+        <div className="flex-1 flex items-center justify-between px-8 py-4 relative z-10">
+          {/* Home Score */}
+          <div className="flex flex-col items-center">
+            <span className="text-green-500 font-bold text-xl tracking-wider uppercase mb-2">HOME</span>
+            <span className="text-7xl font-black text-green-400 font-mono">{teamA.score.toString().padStart(3, '0')}</span>
+            <div className="flex gap-4 mt-2 text-green-300 text-sm font-semibold">
+              <span>FOULS {teamA.fouls}</span>
+              <span>TIME OUT {teamA.timeouts}</span>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 h-16">
-             <HardwareBtn color="zinc" label="FOUL" onClick={() => sendSignal("FOUL_A", {}, () => onAction('A', 'foul', 1))} />
-             <HardwareBtn color="zinc" label="T.O." onClick={() => sendSignal("TO_A", {}, () => onAction('A', 'timeout', 1))} />
+
+          {/* Center Info */}
+          <div className="flex flex-col items-center">
+            <span className="text-blue-400 font-bold text-xl tracking-wider uppercase mb-4">PERIOD {gameState.period}</span>
+            <span className="text-8xl font-black text-white font-mono tracking-tight tabular-nums">{formatTime(gameState.timeLeft)}</span>
+            <span className="text-yellow-400 font-bold text-2xl tracking-wider uppercase mt-4">SHOT CLOCK {gameState.shotClock}</span>
           </div>
-        </div>
 
-        {/* CENTER (ADMIN) */}
-        <div className="col-span-4 flex flex-col gap-2 p-1">
-           {/* Master Clock Switch */}
-           <button 
-             onClick={() => sendSignal("CLOCK_TOGGLE", {s: !gameState.gameRunning}, () => onGameClock('toggle'))}
-             className={`flex-1 rounded border-4 ${gameState.gameRunning ? 'border-red-600 bg-red-900/20 text-red-500' : 'border-green-600 bg-green-900/20 text-green-500'} font-black text-3xl tracking-widest uppercase active:scale-95 transition-transform`}
-           >
-             {gameState.gameRunning ? 'STOP' : 'START'}
-           </button>
-
-           <div className="grid grid-cols-2 gap-2 h-24">
-              <HardwareBtn color="yellow" label="24s" onClick={() => sendSignal("RST_24", {}, () => onShotClock('reset-24'))} />
-              <HardwareBtn color="orange" label="14s" onClick={() => sendSignal("RST_14", {}, () => onShotClock('reset-14'))} />
-           </div>
-           
-           <HardwareBtn color="blue" label={gameState.possession === 'A' ? "< POSS" : "POSS >"} onClick={() => sendSignal("POSS_SW", {}, onPossession)} />
-        </div>
-
-        {/* TEAM B (BLUE) */}
-        <div className="col-span-4 flex flex-col gap-2 border border-zinc-800 p-2 rounded bg-zinc-900/50">
-          <div className="text-center font-black text-blue-500 tracking-widest border-b border-zinc-800 pb-1 mb-1">{teamB.name.toUpperCase()}</div>
-          <div className="grid grid-cols-2 gap-2 flex-1">
-             <HardwareBtn color="blue" label="+1" onClick={() => sendSignal("SCORE_B_1", {v:1}, () => onAction('B', 'points', 1))} />
-             <HardwareBtn color="blue" label="+2" onClick={() => sendSignal("SCORE_B_2", {v:2}, () => onAction('B', 'points', 2))} />
-             <HardwareBtn color="blue" label="+3" onClick={() => sendSignal("SCORE_B_3", {v:3}, () => onAction('B', 'points', 3))} />
-             <HardwareBtn color="zinc" label="UNDO" onClick={() => sendSignal("SCORE_B_UNDO", {v:-1}, () => onAction('B', 'points', -1))} />
-          </div>
-          <div className="grid grid-cols-2 gap-2 h-16">
-             <HardwareBtn color="zinc" label="FOUL" onClick={() => sendSignal("FOUL_B", {}, () => onAction('B', 'foul', 1))} />
-             <HardwareBtn color="zinc" label="T.O." onClick={() => sendSignal("TO_B", {}, () => onAction('B', 'timeout', 1))} />
+          {/* Guest Score */}
+          <div className="flex flex-col items-center">
+            <span className="text-red-500 font-bold text-xl tracking-wider uppercase mb-2">GUEST</span>
+            <span className="text-7xl font-black text-red-400 font-mono">{teamB.score.toString().padStart(3, '0')}</span>
+            <div className="flex gap-4 mt-2 text-red-300 text-sm font-semibold">
+              <span>FOULS {teamB.fouls}</span>
+              <span>TIME OUT {teamB.timeouts}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* === BOTTOM PANEL: SERIAL MONITOR === */}
-      <div className="h-32 bg-black border-t-4 border-zinc-800 p-2 text-xs font-mono shadow-[inset_0_0_20px_rgba(0,0,0,1)]">
-        <div className="flex justify-between border-b border-zinc-800 pb-1 mb-1 text-zinc-500">
-           <span>SERIAL OUT [9600 BAUD]</span>
-           <span className={navigator.onLine ? "text-green-500" : "text-red-500"}>
-             {navigator.onLine ? "● ONLINE (SYNC READY)" : "● OFFLINE (LOCAL MODE)"}
-           </span>
+      {/* === CONTROL PANEL === */}
+      <div className="flex-1 grid grid-cols-3 p-6 gap-8 relative z-10">
+        
+        {/* === HOME CONTROLS (LEFT) === */}
+        <div className="flex flex-col gap-6 p-6 bg-zinc-900/50 rounded-3xl border-2 border-zinc-700/50 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-600 to-green-400"></div>
+          <h3 className="text-center text-green-400 font-bold text-2xl uppercase tracking-wider">HOME</h3>
+          <div className="flex items-center justify-between bg-zinc-800/50 p-4 rounded-xl">
+            <span className="font-bold text-xl">SCORE</span>
+            <div className="flex gap-4">
+              <ScoreCircleBtn label="+1" color="green" onClick={() => sendSignal("HOME_SCORE_+1", { v: 1 }, () => onAction('A', 'points', 1))} />
+              <ScoreCircleBtn label="-1" color="green" onClick={() => sendSignal("HOME_SCORE_-1", { v: -1 }, () => onAction('A', 'points', -1))} />
+            </div>
+          </div>
+          <div className="flex items-center justify-between bg-zinc-800/50 p-4 rounded-xl">
+            <span className="font-bold text-xl">+1</span>
+            <div className="flex gap-4">
+              <ScoreCircleBtn label="+1" color="green" onClick={() => sendSignal("HOME_+1_+1", { v: 1 }, () => onAction('A', 'points', 1))} />
+              <ScoreCircleBtn label="-1" color="green" onClick={() => sendSignal("HOME_+1_-1", { v: -1 }, () => onAction('A', 'points', -1))} />
+            </div>
+          </div>
+          <div className="flex items-center justify-between bg-zinc-800/50 p-4 rounded-xl">
+            <span className="font-bold text-xl">-1</span>
+            <div className="flex gap-4">
+              <ScoreCircleBtn label="+1" color="green" onClick={() => sendSignal("HOME_-1_+1", { v: 1 }, () => onAction('A', 'points', 1))} />
+              <ScoreCircleBtn label="-1" color="green" onClick={() => sendSignal("HOME_-1_-1", { v: -1 }, () => onAction('A', 'points', -1))} />
+            </div>
+          </div>
+          <div className="flex gap-4 mt-auto">
+            <RectBtn label="FOULS" color="green" onClick={() => sendSignal("HOME_FOUL", {}, () => onAction('A', 'foul', 1))} className="flex-1" />
+            <RectBtn label="TIME OUTS" color="green" onClick={() => sendSignal("HOME_TIMEOUT", {}, () => onAction('A', 'timeout', 1))} className="flex-1" />
+          </div>
+          <RectBtn label="EDIT" icon={<Pencil />} onClick={() => {}} className="w-full" />
         </div>
-        <div className="flex flex-col justify-end text-green-500/90 leading-tight">
+
+        {/* === CENTER CONTROLS === */}
+        <div className="flex flex-col items-center justify-center gap-8 relative">
+          <div className="flex items-center gap-4 p-2 bg-zinc-900/80 rounded-full border-2 border-zinc-700/50 shadow-lg">
+            <span className="font-bold text-lg ml-4">POSS</span>
+            <button onClick={() => sendSignal("TOGGLE_POSS", {}, onPossession)} className="relative w-32 h-12 bg-black rounded-full flex items-center justify-between px-2 border-2 border-blue-500/50 shadow-inner overflow-hidden">
+              <div className={`absolute top-1 left-1 w-14 h-9 rounded-full bg-gradient-to-r from-blue-500 to-blue-700 shadow-md transition-all ${gameState.possession === 'B' ? 'translate-x-16' : ''}`}></div>
+              <ArrowLeftRight className="w-6 h-6 text-white/50 relative z-10" />
+              <ArrowLeftRight className="w-6 h-6 text-white/50 relative z-10" />
+            </button>
+          </div>
+
+          <button
+            onClick={() => sendSignal("CLOCK_TOGGLE", { s: !gameState.gameRunning }, () => onGameClock('toggle'))}
+            className={`w-48 h-48 rounded-full bg-gradient-to-b ${gameState.gameRunning ? 'from-red-600 to-red-800' : 'from-green-600 to-green-800'} border-4 border-white/20 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center active:scale-95 transition-all relative`}
+          >
+            <div className="absolute inset-0 rounded-full bg-black/20"></div>
+            {gameState.gameRunning ? <Pause className="w-20 h-20 text-white relative z-10" fill="currentColor" /> : <Play className="w-20 h-20 text-white relative z-10" fill="currentColor" ml-2 />}
+            <span className="font-bold text-xl mt-2 relative z-10">{gameState.gameRunning ? 'STOP' : 'START'}</span>
+          </button>
+
+          <RectBtn label="NEXT QUARTER" icon={<ChevronRight />} onClick={() => sendSignal("NEXT_PERIOD", {}, onNextPeriod)} className="w-full max-w-xs py-4 text-lg" />
+        </div>
+
+        {/* === GUEST CONTROLS (RIGHT) === */}
+        <div className="flex flex-col gap-6 p-6 bg-zinc-900/50 rounded-3xl border-2 border-zinc-700/50 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-600 to-red-400"></div>
+          <h3 className="text-center text-red-400 font-bold text-2xl uppercase tracking-wider">GUEST</h3>
+          <div className="flex items-center justify-between bg-zinc-800/50 p-4 rounded-xl">
+            <span className="font-bold text-xl">SCORE</span>
+            <div className="flex gap-4">
+              <ScoreCircleBtn label="+1" color="red" onClick={() => sendSignal("GUEST_SCORE_+1", { v: 1 }, () => onAction('B', 'points', 1))} />
+              <ScoreCircleBtn label="-1" color="red" onClick={() => sendSignal("GUEST_SCORE_-1", { v: -1 }, () => onAction('B', 'points', -1))} />
+            </div>
+          </div>
+          <div className="flex items-center justify-between bg-zinc-800/50 p-4 rounded-xl">
+            <span className="font-bold text-xl">+1</span>
+            <div className="flex gap-4">
+              <ScoreCircleBtn label="+1" color="red" onClick={() => sendSignal("GUEST_+1_+1", { v: 1 }, () => onAction('B', 'points', 1))} />
+              <ScoreCircleBtn label="-1" color="red" onClick={() => sendSignal("GUEST_+1_-1", { v: -1 }, () => onAction('B', 'points', -1))} />
+            </div>
+          </div>
+          <div className="flex items-center justify-between bg-zinc-800/50 p-4 rounded-xl">
+            <span className="font-bold text-xl">-1</span>
+            <div className="flex gap-4">
+              <ScoreCircleBtn label="+1" color="red" onClick={() => sendSignal("GUEST_-1_+1", { v: 1 }, () => onAction('B', 'points', 1))} />
+              <ScoreCircleBtn label="-1" color="red" onClick={() => sendSignal("GUEST_-1_-1", { v: -1 }, () => onAction('B', 'points', -1))} />
+            </div>
+          </div>
+          <div className="flex gap-4 mt-auto">
+            <RectBtn label="FOULS" color="red" onClick={() => sendSignal("GUEST_FOUL", {}, () => onAction('B', 'foul', 1))} className="flex-1" />
+            <RectBtn label="TIME OUTS" color="red" onClick={() => sendSignal("GUEST_TIMEOUT", {}, () => onAction('B', 'timeout', 1))} className="flex-1" />
+          </div>
+          <RectBtn label="EDIT" icon={<Pencil />} onClick={() => {}} className="w-full" />
+        </div>
+      </div>
+
+      {/* === SERIAL OUT (DEBUG) === */}
+      <div className="h-12 bg-black/80 border-t border-zinc-800 p-1 font-mono text-[10px] leading-tight opacity-70 fixed bottom-0 w-full z-20">
+        <div className="flex flex-col justify-end h-full text-green-500">
           {logs.map((log, i) => (
-            <div key={i}>{log}</div>
+            <div key={i} className="truncate border-l-2 border-green-500 pl-2">{log}</div>
           ))}
           <div ref={logsEndRef} />
         </div>
       </div>
     </div>
-  );
-};
-
-// Reusable Button Component
-const HardwareBtn = ({ color, label, onClick }: any) => {
-  const styles: any = {
-    red: "bg-red-800 hover:bg-red-700 active:bg-red-600 border-b-4 border-red-950 active:border-b-0 active:translate-y-1 active:mt-1",
-    blue: "bg-blue-800 hover:bg-blue-700 active:bg-blue-600 border-b-4 border-blue-950 active:border-b-0 active:translate-y-1 active:mt-1",
-    yellow: "bg-yellow-500 hover:bg-yellow-400 active:bg-yellow-300 border-b-4 border-yellow-700 active:border-b-0 active:translate-y-1 active:mt-1 text-black",
-    orange: "bg-orange-600 hover:bg-orange-500 active:bg-orange-400 border-b-4 border-orange-800 active:border-b-0 active:translate-y-1 active:mt-1 text-black",
-    zinc: "bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 border-b-4 border-black active:border-b-0 active:translate-y-1 active:mt-1 text-zinc-400",
-  };
-  return (
-    <button onClick={onClick} className={`w-full h-full rounded text-xl font-bold uppercase transition-all ${styles[color] || styles.zinc}`}>
-      {label}
-    </button>
   );
 };
