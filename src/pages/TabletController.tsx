@@ -1,7 +1,7 @@
 // src/pages/TabletController.tsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import '../styles/hardware.css'; // <-- ADDED THIS LINE
+import '../styles/hardware.css';
 import { BootSequence } from '../features/tablet/BootSequence';
 import { HardwareUI } from '../features/tablet/HardwareUI';
 import { StatusBar } from '../features/tablet/StatusBar';
@@ -17,7 +17,7 @@ export const TabletController: React.FC = () => {
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [syncQueue, setSyncQueue] = useState<any[]>([]);
   const [tapCount, setTapCount] = useState(0);
-  const [tapTimer, setTapTimer] = useState<NodeJS.Timeout | null>(null);
+  const [tapTimer, setTapTimer] = useState<number | null>(null);
 
   // === INITIALIZATION ===
   useEffect(() => {

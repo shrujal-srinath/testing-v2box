@@ -409,7 +409,10 @@ export const Scoreboard: React.FC = () => {
           gameState={game.gameState}
           onAction={handleAction}
           onGameClock={() => {}} // Classic mode clock controls deferred for now
-          onShotClock={game.resetShotClock}
+          onShotClock={(action) => {
+            if (action === 'reset-24') game.resetShotClock(24);
+            else if (action === 'reset-14') game.resetShotClock(14);
+          }}
           onPossession={game.togglePossession}
           onUndo={() => {}} 
           onSwitchMode={() => setControlMode('pro')} 
