@@ -1,6 +1,7 @@
 // src/pages/TabletController.tsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import '../styles/hardware.css'; // <-- ADDED THIS LINE
 import { BootSequence } from '../features/tablet/BootSequence';
 import { HardwareUI } from '../features/tablet/HardwareUI';
 import { StatusBar } from '../features/tablet/StatusBar';
@@ -8,7 +9,6 @@ import { DiagnosticConsole } from '../features/tablet/DiagnosticConsole';
 import { saveGameAction, loadLocalGame } from '../services/hybridService';
 import type { BasketballGame } from '../types';
 import { subscribeToGame } from '../services/gameService';
-import '../styles/hardware.css';
 
 export const TabletController: React.FC = () => {
   const { gameCode } = useParams();

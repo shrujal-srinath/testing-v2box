@@ -1,0 +1,19 @@
+{
+  "name": "BOX-V2 Referee Controller",
+  "short_name": "BOX-V2",
+  "description": "Professional Basketball Referee Hardware Interface",
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "start_url": "/",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
