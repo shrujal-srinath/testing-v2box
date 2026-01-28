@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { User } from 'firebase/auth';
 import type { BasketballGame } from '../types';
 import { logoutUser, subscribeToAuth } from '../services/authService';
 import { getUserActiveGames } from '../services/gameService';
+import type { User } from 'firebase/auth';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -36,25 +36,28 @@ export const Dashboard: React.FC = () => {
     navigate('/setup', { state: { sport: sportId } });
   };
 
-  // NEW: Navigate to tablet mode with game selection
   const goToTabletMode = (gameCode?: string) => {
     if (gameCode) {
       navigate(`/tablet/${gameCode}`);
     } else {
-      // If no game code provided, show modal to select game
+      // User clicked from menu - show game selection modal
       setActiveModal('tablet');
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (loading) return (
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="w-8 h-8 border-3 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
 
   return (
-    <div className={`min-h-screen bg-black font-sans text-white transition-transform duration-300 ${isMenuOpen ? '-translate-x-[0px]' : ''}`}>
+    <div className={`min-h-screen bg-black font-sans text-white transition-transform duration-300`}>
       
       {/* === HEADER === */}
       <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md p-6 flex justify-between items-center sticky top-0 z-20">
         
-        {/* LEFT: User Profile Option (Replaces "OP") */}
+        {/* LEFT: User Profile Option */}
         <button 
           onClick={() => setActiveModal('profile')}
           className="flex items-center gap-4 group hover:bg-zinc-800/50 p-2 -ml-2 rounded-lg transition-all"
@@ -67,7 +70,7 @@ export const Dashboard: React.FC = () => {
                 <span className="text-zinc-400">{user ? user.displayName?.[0] || 'U' : 'G'}</span>
               )}
             </div>
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-black rounded-full"></div>
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-black rounded-full animate-pulse"></div>
           </div>
           <div className="text-left">
             <h1 className="text-sm font-bold text-white group-hover:text-red-500 transition-colors leading-none">
@@ -80,7 +83,11 @@ export const Dashboard: React.FC = () => {
         </button>
 
         {/* RIGHT: Hamburger Trigger */}
-        <button onClick={() => setIsMenuOpen(true)} className="group p-2 space-y-1.5 cursor-pointer z-30 hover:bg-zinc-800 rounded">
+        <button 
+          onClick={() => setIsMenuOpen(true)} 
+          className="group p-2 space-y-1.5 cursor-pointer z-30 hover:bg-zinc-800 rounded transition-colors"
+          aria-label="Open menu"
+        >
           <div className="w-6 h-0.5 bg-zinc-400 group-hover:bg-white transition-colors"></div>
           <div className="w-6 h-0.5 bg-zinc-400 group-hover:bg-white transition-colors"></div>
           <div className="w-4 h-0.5 bg-zinc-400 group-hover:bg-white transition-colors ml-auto"></div>
@@ -94,35 +101,44 @@ export const Dashboard: React.FC = () => {
           
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Command Menu</h2>
-            <button onClick={() => setIsMenuOpen(false)} className="text-2xl text-zinc-500 hover:text-white">&times;</button>
+            <button onClick={() => setIsMenuOpen(false)} className="text-2xl text-zinc-500 hover:text-white transition-colors">&times;</button>
           </div>
 
-          <div className="space-y-1 flex-1">
+          <div className="space-y-1 flex-1 overflow-y-auto">
             <MenuItem label="Dashboard" icon="⊞" onClick={() => setIsMenuOpen(false)} active />
             <MenuItem label="My Profile" icon="👤" onClick={() => { setIsMenuOpen(false); setActiveModal('profile'); }} disabled={!user} />
             <MenuItem label="Match History" icon="↺" onClick={() => { setIsMenuOpen(false); setActiveModal('history'); }} disabled={!user} />
-            <MenuItem label="System Status" icon="⚡" onClick={() => { setIsMenuOpen(false); setActiveModal('status'); }} />
-            <MenuItem label="Settings" icon="⚙" onClick={() => { setIsMenuOpen(false); setActiveModal('settings'); }} />
             
-            {/* === NEW: TABLET MODE OPTION === */}
+            {/* === TABLET MODE - Smart Placement Logic === */}
+            {/* Show in Quick Actions section ONLY if there are active games */}
+            {myGames.length > 0 && (
+              <div className="pt-4 mt-4 border-t border-zinc-900">
+                <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-2 px-4 font-bold">Quick Actions</div>
+                <MenuItem 
+                  label="Tablet Controller" 
+                  icon="📱" 
+                  onClick={() => { setIsMenuOpen(false); goToTabletMode(); }} 
+                  highlight={true}
+                  subtitle={`Control ${myGames.length} active ${myGames.length === 1 ? 'game' : 'games'}`}
+                  badge={myGames.length}
+                />
+              </div>
+            )}
+            
             <div className="pt-4 mt-4 border-t border-zinc-900">
-              <MenuItem 
-                label="Tablet Mode" 
-                icon="📱" 
-                onClick={() => { setIsMenuOpen(false); goToTabletMode(); }} 
-                highlight={true}
-              />
+              <MenuItem label="System Status" icon="⚡" onClick={() => { setIsMenuOpen(false); setActiveModal('status'); }} />
+              <MenuItem label="Settings" icon="⚙" onClick={() => { setIsMenuOpen(false); setActiveModal('settings'); }} />
             </div>
           </div>
 
           <div className="pt-6 border-t border-zinc-900">
              {user ? (
                <button onClick={handleLogout} className="w-full text-left flex items-center gap-4 p-4 hover:bg-red-900/10 text-red-500 hover:text-red-400 transition-colors uppercase font-bold text-xs tracking-widest rounded">
-                 <span>↪</span> Log Out
+                 <span className="text-lg">↪</span> <span>Log Out</span>
                </button>
              ) : (
                <button onClick={() => navigate('/')} className="w-full text-left flex items-center gap-4 p-4 hover:bg-zinc-900 text-zinc-400 hover:text-white transition-colors uppercase font-bold text-xs tracking-widest rounded">
-                 <span>↪</span> Exit Guest Mode
+                 <span className="text-lg">↪</span> <span>Exit Guest Mode</span>
                </button>
              )}
           </div>
@@ -135,7 +151,7 @@ export const Dashboard: React.FC = () => {
       {/* === MAIN CONTENT === */}
       <main className="max-w-7xl mx-auto p-6 md:p-12">
         
-        {/* SECTION 1: SPORT SELECTION */}
+        {/* SECTION 1: SPORT SELECTION - ENHANCED HOVER WITH BRIGHTENED ICONS */}
         <section className="mb-12">
           <h2 className="text-zinc-500 text-xs font-bold uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
             <span className="w-2 h-2 bg-red-600 rounded-full"></span> Initialize New Session
@@ -187,7 +203,7 @@ export const Dashboard: React.FC = () => {
           </div>
         </section>
 
-        {/* SECTION 2: ACTIVE GAMES (Only if logged in) */}
+        {/* SECTION 2: ACTIVE GAMES */}
         {user && (
           <section className="animate-in fade-in slide-in-from-bottom-4 duration-700">
              <div className="flex items-center justify-between border-b border-zinc-800 pb-4 mb-6">
@@ -205,21 +221,23 @@ export const Dashboard: React.FC = () => {
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                  {myGames.map(g => (
                    <div key={g.code} className="bg-zinc-900/50 border border-zinc-800 p-4 rounded-sm hover:border-green-500 transition-all group relative overflow-hidden">
-                      <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+                      <div className="absolute top-0 left-0 w-1 h-full bg-green-500 group-hover:w-2 transition-all"></div>
                       <div className="flex justify-between items-start mb-4">
                         <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest bg-black px-2 py-1 rounded">{g.sport || 'BASKETBALL'}</div>
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <div className="relative">
+                          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                          <div className="absolute inset-0 w-2 h-2 rounded-full bg-green-500 animate-ping"></div>
+                        </div>
                       </div>
-                      <h3 className="font-black italic text-xl text-white mb-1 group-hover:text-green-400 transition-colors uppercase">{g.settings.gameName}</h3>
-                      <div className="text-xs font-mono text-zinc-400 mb-4">ID: {g.code}</div>
+                      <h3 className="font-black italic text-xl text-white mb-1 group-hover:text-green-400 transition-colors uppercase tracking-tight">{g.settings.gameName}</h3>
+                      <div className="text-xs font-mono text-zinc-400 mb-4">ID: <span className="text-zinc-500">{g.code}</span></div>
                       
                       <div className="flex items-center justify-between bg-black p-3 rounded border border-zinc-800 mb-3">
-                         <div className="font-bold text-white">{g.teamA.score}</div>
-                         <div className="text-[9px] text-zinc-600 uppercase">VS</div>
-                         <div className="font-bold text-white">{g.teamB.score}</div>
+                         <div className="font-bold text-white text-lg">{g.teamA.score}</div>
+                         <div className="text-[9px] text-zinc-600 uppercase tracking-widest">VS</div>
+                         <div className="font-bold text-white text-lg">{g.teamB.score}</div>
                       </div>
 
-                      {/* === NEW: ACTION BUTTONS === */}
                       <div className="flex gap-2">
                         <button 
                           onClick={() => navigate(`/host/${g.code}`)}
@@ -229,9 +247,9 @@ export const Dashboard: React.FC = () => {
                         </button>
                         <button 
                           onClick={() => goToTabletMode(g.code)}
-                          className="flex-1 py-2 bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold uppercase tracking-widest rounded transition-colors"
+                          className="flex-1 py-2 bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold uppercase tracking-widest rounded transition-colors flex items-center justify-center gap-1"
                         >
-                          📱 Tablet
+                          <span>📱</span> Tablet
                         </button>
                       </div>
                    </div>
@@ -244,69 +262,19 @@ export const Dashboard: React.FC = () => {
 
       {/* === MODALS === */}
       
-      {/* 1. OPERATOR PROFILE MODAL */}
-      {activeModal === 'profile' && (
-        <Modal title="Operator Profile" onClose={() => setActiveModal(null)}>
-           <div className="flex items-center gap-6 mb-8 bg-zinc-900 p-6 rounded border border-zinc-800">
-             <div className="w-20 h-20 rounded-full bg-black border-2 border-red-600 flex items-center justify-center overflow-hidden">
-                {user?.photoURL ? <img src={user.photoURL} className="w-full h-full object-cover" /> : <span className="text-3xl">👤</span>}
-             </div>
-             <div>
-               <h3 className="text-2xl font-black italic text-white">{user?.displayName}</h3>
-               <p className="text-xs text-zinc-500 font-mono">{user?.email}</p>
-               <div className="mt-2 inline-flex items-center gap-2 bg-red-900/20 text-red-500 text-[9px] font-bold px-2 py-1 rounded uppercase tracking-widest">
-                 <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span> Pro License Active
-               </div>
-             </div>
-           </div>
-           
-           <div className="grid grid-cols-2 gap-4">
-              <div className="bg-black p-4 border border-zinc-800 rounded">
-                 <div className="text-2xl font-bold text-white">{myGames.length}</div>
-                 <div className="text-[9px] text-zinc-500 uppercase tracking-widest">Active Games</div>
-              </div>
-              <div className="bg-black p-4 border border-zinc-800 rounded">
-                 <div className="text-2xl font-bold text-zinc-600">0</div>
-                 <div className="text-[9px] text-zinc-600 uppercase tracking-widest">Archived</div>
-              </div>
-           </div>
-        </Modal>
-      )}
-
-      {/* 2. SYSTEM STATUS MODAL */}
-      {activeModal === 'status' && (
-        <Modal title="System Status" onClose={() => setActiveModal(null)}>
-           <div className="space-y-4">
-              <StatusRow label="Server Connection" value="Connected" status="good" />
-              <StatusRow label="Latency" value="24ms" status="good" />
-              <StatusRow label="Database Sync" value="Real-time" status="good" />
-              <StatusRow label="Auth Service" value="Online" status="good" />
-              <StatusRow label="Client Version" value="v2.1.0 (Beta)" status="neutral" />
-           </div>
-           <div className="mt-6 p-4 bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-500 font-mono leading-relaxed">
-             System operating within normal parameters. No outages reported in your region.
-           </div>
-        </Modal>
-      )}
-
-      {/* === NEW: 3. TABLET MODE SELECTION MODAL === */}
+      {/* Tablet Mode Selection Modal */}
       {activeModal === 'tablet' && (
-        <Modal title="Enter Tablet Mode" onClose={() => setActiveModal(null)}>
+        <Modal title="Tablet Controller" onClose={() => setActiveModal(null)}>
            <div className="mb-6">
-             <p className="text-sm text-zinc-400 mb-4">
-               Select a game to control in tablet mode, or start a new game first.
+             <p className="text-sm text-zinc-400 mb-6 leading-relaxed">
+               Select an active game to control in tablet mode. Tablet mode provides touch-optimized controls for score keeping.
              </p>
              
              {myGames.length === 0 ? (
-               <div className="bg-zinc-900 border border-zinc-800 p-8 rounded text-center">
-                 <div className="text-3xl mb-3 opacity-30">📱</div>
-                 <p className="text-zinc-500 text-xs">No active games available.</p>
-                 <button 
-                   onClick={() => { setActiveModal(null); navigate('/setup'); }}
-                   className="mt-4 px-6 py-2 bg-white text-black font-bold text-xs uppercase tracking-widest rounded hover:bg-zinc-200 transition-colors"
-                 >
-                   Create New Game
-                 </button>
+               <div className="bg-zinc-900 border border-zinc-800 p-12 rounded text-center">
+                 <div className="text-5xl mb-4 opacity-20">📱</div>
+                 <p className="text-zinc-500 text-xs uppercase tracking-widest">No active games available</p>
+                 <p className="text-zinc-600 text-[10px] mt-2">Start a new game from the dashboard first</p>
                </div>
              ) : (
                <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -314,18 +282,19 @@ export const Dashboard: React.FC = () => {
                    <button
                      key={g.code}
                      onClick={() => goToTabletMode(g.code)}
-                     className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-blue-500 p-4 rounded text-left transition-all group"
+                     className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-blue-500 p-5 rounded text-left transition-all group relative overflow-hidden"
                    >
-                     <div className="flex justify-between items-center mb-2">
-                       <h4 className="font-black text-white group-hover:text-blue-400 transition-colors">
+                     <div className="absolute left-0 top-0 h-full w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                     <div className="flex justify-between items-start mb-3">
+                       <h4 className="font-black text-lg text-white group-hover:text-blue-400 transition-colors uppercase italic tracking-tight">
                          {g.settings.gameName}
                        </h4>
-                       <span className="text-xs font-mono text-zinc-500">{g.code}</span>
+                       <span className="text-xs font-mono text-zinc-500 bg-black px-2 py-1 rounded">{g.code}</span>
                      </div>
-                     <div className="flex items-center gap-4 text-xs text-zinc-400">
-                       <span>{g.teamA.name} {g.teamA.score}</span>
-                       <span>-</span>
-                       <span>{g.teamB.score} {g.teamB.name}</span>
+                     <div className="flex items-center justify-between text-xs text-zinc-400 bg-black p-3 rounded">
+                       <span className="font-bold">{g.teamA.name} <span className="text-white text-sm ml-1">{g.teamA.score}</span></span>
+                       <span className="text-zinc-600">-</span>
+                       <span className="font-bold"><span className="text-white text-sm mr-1">{g.teamB.score}</span> {g.teamB.name}</span>
                      </div>
                    </button>
                  ))}
@@ -335,14 +304,64 @@ export const Dashboard: React.FC = () => {
         </Modal>
       )}
 
-      {/* 4. HISTORY / SETTINGS PLACEHOLDERS */}
-      {(activeModal === 'history' || activeModal === 'settings') && (
-        <Modal title={activeModal === 'history' ? "Match History" : "System Settings"} onClose={() => setActiveModal(null)}>
-           <div className="text-center py-12">
-             <div className="text-4xl mb-4">🚧</div>
-             <h3 className="text-lg font-bold text-white mb-2">Under Development</h3>
-             <p className="text-sm text-zinc-500 max-w-xs mx-auto">This module is currently being built. Check back in the next update.</p>
-           </div>
+      {/* Profile Modal */}
+      {activeModal === 'profile' && (
+        <Modal title="User Profile" onClose={() => setActiveModal(null)}>
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 pb-6 border-b border-zinc-800">
+              <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden border-2 border-red-600">
+                {user?.photoURL ? (
+                  <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-2xl text-zinc-400">{user?.displayName?.[0] || 'U'}</span>
+                )}
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">{user?.displayName || 'Guest User'}</h3>
+                <p className="text-xs text-zinc-500">{user?.email || 'No account'}</p>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <InfoRow label="Account Type" value={user ? 'Pro Access' : 'Guest Mode'} />
+              <InfoRow label="Active Games" value={myGames.length.toString()} />
+              <InfoRow label="User ID" value={user?.uid?.slice(0, 12) + '...' || 'N/A'} />
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Status Modal */}
+      {activeModal === 'status' && (
+        <Modal title="System Status" onClose={() => setActiveModal(null)}>
+          <div className="space-y-4">
+            <StatusItem label="Server Connection" status="online" />
+            <StatusItem label="Firebase Database" status="online" />
+            <StatusItem label="Authentication" status={user ? 'online' : 'local'} />
+            <StatusItem label="Live Sync" status="online" />
+          </div>
+        </Modal>
+      )}
+
+      {/* History Modal */}
+      {activeModal === 'history' && (
+        <Modal title="Match History" onClose={() => setActiveModal(null)}>
+          <div className="text-center py-12">
+            <div className="text-5xl mb-4 opacity-20">📊</div>
+            <p className="text-zinc-500 text-xs uppercase tracking-widest">Coming Soon</p>
+            <p className="text-zinc-600 text-[10px] mt-2">Match history feature in development</p>
+          </div>
+        </Modal>
+      )}
+
+      {/* Settings Modal */}
+      {activeModal === 'settings' && (
+        <Modal title="Settings" onClose={() => setActiveModal(null)}>
+          <div className="text-center py-12">
+            <div className="text-5xl mb-4 opacity-20">⚙️</div>
+            <p className="text-zinc-500 text-xs uppercase tracking-widest">Coming Soon</p>
+            <p className="text-zinc-600 text-[10px] mt-2">Settings panel in development</p>
+          </div>
         </Modal>
       )}
 
@@ -350,47 +369,108 @@ export const Dashboard: React.FC = () => {
   );
 };
 
-// --- SUBCOMPONENTS ---
-
+// --- ENHANCED SPORT CARD COMPONENT WITH BRIGHTENED ICON ---
 const SportCard = ({ name, desc, icon, onClick, accent }: any) => {
-  const accents: any = {
-    red: 'hover:border-red-600 group-hover:text-red-500',
-    blue: 'hover:border-blue-600 group-hover:text-blue-500',
-    green: 'hover:border-green-600 group-hover:text-green-500',
-    yellow: 'hover:border-yellow-600 group-hover:text-yellow-500',
-    orange: 'hover:border-orange-600 group-hover:text-orange-500',
-    purple: 'hover:border-purple-600 group-hover:text-purple-500',
+  const accentConfig: any = {
+    red: { 
+      border: 'hover:border-red-600', 
+      text: 'group-hover:text-red-500',
+      glow: 'group-hover:drop-shadow-[0_0_30px_rgba(220,38,38,0.8)]'
+    },
+    blue: { 
+      border: 'hover:border-blue-600', 
+      text: 'group-hover:text-blue-500',
+      glow: 'group-hover:drop-shadow-[0_0_30px_rgba(37,99,235,0.8)]'
+    },
+    green: { 
+      border: 'hover:border-green-600', 
+      text: 'group-hover:text-green-500',
+      glow: 'group-hover:drop-shadow-[0_0_30px_rgba(22,163,74,0.8)]'
+    },
+    yellow: { 
+      border: 'hover:border-yellow-600', 
+      text: 'group-hover:text-yellow-500',
+      glow: 'group-hover:drop-shadow-[0_0_30px_rgba(202,138,4,0.8)]'
+    },
+    orange: { 
+      border: 'hover:border-orange-600', 
+      text: 'group-hover:text-orange-500',
+      glow: 'group-hover:drop-shadow-[0_0_30px_rgba(234,88,12,0.8)]'
+    },
+    purple: { 
+      border: 'hover:border-purple-600', 
+      text: 'group-hover:text-purple-500',
+      glow: 'group-hover:drop-shadow-[0_0_30px_rgba(147,51,234,0.8)]'
+    },
   };
+
+  const config = accentConfig[accent];
 
   return (
     <button 
       onClick={onClick}
-      className={`bg-zinc-900/40 border border-zinc-800 p-6 text-left group transition-all relative overflow-hidden h-40 flex flex-col justify-between ${accents[accent]}`}
+      className={`bg-zinc-900/40 border border-zinc-800 p-6 text-left group transition-all relative overflow-hidden h-40 flex flex-col justify-between ${config.border} hover:shadow-lg`}
     >
-      <div className="absolute -top-2 -right-2 text-8xl opacity-[0.05] grayscale group-hover:grayscale-0 transition-all rotate-12">{icon}</div>
-      <div>
-        <h3 className={`text-xl font-black italic text-zinc-300 transition-colors ${accents[accent].split(' ')[1]}`}>{name}</h3>
-        <p className="text-zinc-500 text-[10px] mt-1 uppercase tracking-widest font-bold">{desc}</p>
+      {/* ENHANCED: Icon with brightness, scale, glow, and filter effects on hover */}
+      <div 
+        className={`
+          absolute -top-4 -right-4 text-[120px] 
+          opacity-[0.04] 
+          grayscale 
+          group-hover:grayscale-0 
+          group-hover:opacity-40 
+          group-hover:scale-125
+          transition-all duration-500 
+          rotate-12 
+          group-hover:brightness-[1.8]
+          group-hover:saturate-[1.5]
+          ${config.glow}
+        `}
+      >
+        {icon}
       </div>
-      <div className="flex items-center gap-2 text-zinc-600 text-[10px] font-bold uppercase tracking-widest group-hover:text-white transition-colors">
+      
+      {/* Sport Name and Description */}
+      <div>
+        <h3 className={`text-xl font-black italic text-zinc-300 transition-colors uppercase tracking-tight ${config.text}`}>
+          {name}
+        </h3>
+        <p className="text-zinc-500 text-[10px] mt-1 uppercase tracking-widest font-bold leading-tight">
+          {desc}
+        </p>
+      </div>
+      
+      {/* Action hint */}
+      <div className={`flex items-center gap-2 text-zinc-600 text-[10px] font-bold uppercase tracking-widest group-hover:text-white transition-colors ${config.text}`}>
         Initialize <span className="text-sm">→</span>
       </div>
     </button>
   );
 };
 
-const MenuItem = ({ label, icon, onClick, active, disabled, highlight }: any) => (
+// MenuItem component with optional badge and subtitle
+const MenuItem = ({ label, icon, onClick, active, disabled, highlight, subtitle, badge }: any) => (
   <button 
     onClick={onClick}
     disabled={disabled}
-    className={`w-full text-left flex items-center gap-4 p-4 rounded transition-all uppercase font-bold text-[10px] tracking-widest
+    className={`w-full text-left flex items-center justify-between p-4 rounded transition-all uppercase font-bold text-[10px] tracking-widest relative
       ${active ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white hover:bg-zinc-900'}
       ${disabled ? 'opacity-30 cursor-not-allowed hover:bg-transparent hover:text-zinc-500' : ''}
       ${highlight ? 'bg-blue-900/20 text-blue-400 hover:bg-blue-900/30 hover:text-blue-300 border border-blue-900/50' : ''}
     `}
   >
-    <span className="text-lg w-6 text-center">{icon}</span>
-    {label}
+    <div className="flex items-center gap-4 flex-1">
+      <span className="text-lg w-6 text-center flex-shrink-0">{icon}</span>
+      <div className="flex-1 min-w-0">
+        <div className="truncate">{label}</div>
+        {subtitle && <div className="text-[8px] text-zinc-600 mt-0.5 normal-case tracking-normal truncate">{subtitle}</div>}
+      </div>
+    </div>
+    {badge && (
+      <span className="ml-2 bg-blue-600 text-white text-[9px] px-2 py-0.5 rounded-full font-bold flex-shrink-0">
+        {badge}
+      </span>
+    )}
   </button>
 );
 
@@ -400,16 +480,38 @@ const Modal = ({ title, children, onClose }: any) => (
     <div className="bg-zinc-950 border border-zinc-800 w-full max-w-md p-6 relative z-10 animate-in zoom-in-95 duration-200 shadow-2xl rounded-sm">
       <div className="flex justify-between items-center mb-6 border-b border-zinc-800 pb-4">
         <h3 className="text-sm font-bold uppercase tracking-widest text-white">{title}</h3>
-        <button onClick={onClose} className="text-zinc-500 hover:text-white text-xl">&times;</button>
+        <button onClick={onClose} className="text-zinc-500 hover:text-white text-2xl transition-colors leading-none">&times;</button>
       </div>
       {children}
     </div>
   </div>
 );
 
-const StatusRow = ({ label, value, status }: any) => (
-  <div className="flex justify-between items-center py-2 border-b border-zinc-900 last:border-0">
-    <span className="text-xs text-zinc-500 font-bold uppercase tracking-wide">{label}</span>
-    <span className={`text-xs font-mono font-bold ${status === 'good' ? 'text-green-500' : 'text-zinc-400'}`}>{value}</span>
+const InfoRow = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex justify-between items-center py-2 border-b border-zinc-900">
+    <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">{label}</span>
+    <span className="text-sm text-white font-mono">{value}</span>
   </div>
 );
+
+const StatusItem = ({ label, status }: { label: string; status: 'online' | 'offline' | 'local' }) => {
+  const statusConfig = {
+    online: { color: 'bg-green-500', text: 'Online', textColor: 'text-green-400' },
+    offline: { color: 'bg-red-500', text: 'Offline', textColor: 'text-red-400' },
+    local: { color: 'bg-yellow-500', text: 'Local Only', textColor: 'text-yellow-400' }
+  };
+  const config = statusConfig[status];
+
+  return (
+    <div className="flex justify-between items-center py-3 border-b border-zinc-900">
+      <span className="text-xs text-zinc-400 uppercase tracking-wider">{label}</span>
+      <div className="flex items-center gap-2">
+        <div className="relative">
+          <div className={`w-2 h-2 ${config.color} rounded-full`}></div>
+          <div className={`absolute inset-0 w-2 h-2 ${config.color} rounded-full animate-ping opacity-75`}></div>
+        </div>
+        <span className={`text-xs font-bold uppercase tracking-widest ${config.textColor}`}>{config.text}</span>
+      </div>
+    </div>
+  );
+};

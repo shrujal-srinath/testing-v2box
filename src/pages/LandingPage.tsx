@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-// Removed unused User import
 import type { BasketballGame } from '../types';
-import { loginWithGoogle, loginWithEmail, registerWithEmail, subscribeToAuth } from '../services/authService'; // Removed logoutUser
+import { loginWithGoogle, loginWithEmail, registerWithEmail, subscribeToAuth } from '../services/authService';
 import { subscribeToLiveGames } from '../services/gameService';
 
 export const LandingPage: React.FC = () => {
@@ -29,19 +28,18 @@ export const LandingPage: React.FC = () => {
 
   // --- INITIALIZATION ---
   useEffect(() => {
-    // 1. Splash Sequence
-    const t1 = setTimeout(() => setStage(1), 300);
-    const t2 = setTimeout(() => setStage(2), 800);
-    const t3 = setTimeout(() => setStage(3), 1600);
+    // 1. Enhanced Splash Sequence with refined timing
+    const t1 = setTimeout(() => setStage(1), 200);
+    const t2 = setTimeout(() => setStage(2), 700);
+    const t3 = setTimeout(() => setStage(3), 1500);
     const t4 = setTimeout(() => setStage(4), 3500);
-    const t5 = setTimeout(() => setShowSplash(false), 4100);
+    const t5 = setTimeout(() => setShowSplash(false), 4200);
     
     // 2. Auth Listener with REDIRECT TO DASHBOARD
     const unsubAuth = subscribeToAuth((u) => {
       if (u) {
-        // If splash is still showing, wait for it. Otherwise go immediately.
         if (!showSplash) navigate('/dashboard');
-        else setTimeout(() => navigate('/dashboard'), 4200);
+        else setTimeout(() => navigate('/dashboard'), 4300);
       }
     });
 
@@ -67,34 +65,163 @@ export const LandingPage: React.FC = () => {
     try {
       if (isRegistering) await registerWithEmail(email, password);
       else await loginWithEmail(email, password);
-      // Redirect handled by useEffect above
     } catch (err: any) {
       setAuthError(err.message.replace('Firebase: ', ''));
     }
   };
 
-  // --- RENDER: SPLASH SCREEN ---
+  // --- RENDER: REFINED SPLASH SCREEN ---
   if (showSplash) {
     return (
       <div className={`fixed inset-0 bg-black z-50 flex items-center justify-center transition-opacity duration-1000 ${stage === 4 ? 'opacity-0' : 'opacity-100'}`}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900 via-black to-black opacity-80"></div>
-        {/* Carbon Fiber Texture */}
-        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#333 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+        {/* Multi-layer radial gradient background with depth */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-900/50 via-black to-black"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,_var(--tw-gradient-stops))] from-red-950/20 via-transparent to-transparent"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,_var(--tw-gradient-stops))] from-red-950/10 via-transparent to-transparent"></div>
+        </div>
         
-        <div className="relative z-10 flex flex-col items-center">
-          <div className="flex flex-col md:flex-row items-center gap-0 md:gap-6 mb-4">
-            {stage >= 2 && <h1 className="text-7xl md:text-9xl font-black italic tracking-tighter text-white animate-slam leading-none drop-shadow-2xl">THE BOX</h1>}
-            {stage >= 2 && <div className="hidden md:block w-1 h-24 bg-zinc-700 transform skew-x-12 animate-slam"></div>}
+        {/* Animated grid pattern with pulse */}
+        <div 
+          className="absolute inset-0 opacity-[0.15]" 
+          style={{ 
+            backgroundImage: 'radial-gradient(circle, #444 1px, transparent 1px)', 
+            backgroundSize: '30px 30px',
+            animation: stage >= 2 ? 'grid-pulse 3s ease-in-out infinite' : 'none'
+          }}
+        ></div>
+        
+        {/* Diagonal light beams with improved animation */}
+        {stage >= 1 && (
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute top-0 left-1/4 w-[2px] h-full bg-gradient-to-b from-red-600/0 via-red-600/40 to-red-600/0 transform -skew-x-12 animate-beam-1 shadow-[0_0_30px_rgba(220,38,38,0.5)]"></div>
+            <div className="absolute top-0 right-1/4 w-[2px] h-full bg-gradient-to-b from-red-600/0 via-red-600/30 to-red-600/0 transform skew-x-12 animate-beam-2 shadow-[0_0_30px_rgba(220,38,38,0.4)]"></div>
+            <div className="absolute top-0 left-1/2 w-[1px] h-full bg-gradient-to-b from-red-600/0 via-red-600/20 to-red-600/0 animate-beam-3 shadow-[0_0_20px_rgba(220,38,38,0.3)]"></div>
+          </div>
+        )}
+        
+        <div className="relative z-10 flex flex-col items-center px-6">
+          <div className="flex flex-col md:flex-row items-center gap-0 md:gap-8 mb-8">
             {stage >= 2 && (
-              <div className="flex flex-col justify-center items-center md:items-start animate-slam mt-4 md:mt-0" style={{ animationDelay: '0.2s' }}>
-                <span className="text-zinc-500 text-[10px] font-bold tracking-[0.3em] uppercase mb-1">Powered By</span>
-                <span className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-500 italic uppercase tracking-tighter leading-none">BMSCE</span>
+              <h1 className="text-7xl md:text-9xl font-black italic tracking-tighter text-white animate-slam leading-none drop-shadow-2xl relative">
+                THE BOX
+                {/* Enhanced glitch effect with multiple layers */}
+                <span className="absolute inset-0 text-red-600 opacity-40 animate-glitch-1" aria-hidden="true">THE BOX</span>
+                <span className="absolute inset-0 text-red-500 opacity-20 animate-glitch-2" aria-hidden="true">THE BOX</span>
+                {/* Subtle glow effect */}
+                <span className="absolute inset-0 blur-2xl text-red-600 opacity-30 animate-pulse" aria-hidden="true">THE BOX</span>
+              </h1>
+            )}
+            {stage >= 2 && (
+              <div className="hidden md:block relative">
+                <div className="w-[2px] h-32 bg-gradient-to-b from-transparent via-red-600 to-transparent transform skew-x-12 animate-slam shadow-[0_0_25px_rgba(220,38,38,0.9)]"></div>
+                {/* Pulsing glow orbs on the divider */}
+                <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(239,68,68,1)]"></div>
+                <div className="absolute top-3/4 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-400 rounded-full animate-pulse shadow-[0_0_15px_rgba(248,113,113,1)]" style={{ animationDelay: '0.5s' }}></div>
+              </div>
+            )}
+            {stage >= 2 && (
+              <div className="flex flex-col justify-center items-center md:items-start animate-slam mt-4 md:mt-0" style={{ animationDelay: '0.15s' }}>
+                <span className="text-zinc-500 text-[10px] font-bold tracking-[0.35em] uppercase mb-2 animate-pulse">Powered By</span>
+                <span className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-red-500 to-red-600 italic uppercase tracking-tighter leading-none bg-[length:200%_100%] animate-gradient drop-shadow-[0_0_20px_rgba(220,38,38,0.4)]">
+                  BMSCE
+                </span>
               </div>
             )}
           </div>
-          {stage >= 1 && <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-red-600 to-transparent animate-scan mb-8 mt-2 shadow-[0_0_15px_rgba(220,38,38,0.8)]"></div>}
-          {stage >= 3 && <div className="animate-tracking text-center"><p className="text-zinc-400 text-xs md:text-sm font-mono font-bold uppercase">The Official College Sports App</p></div>}
+          
+          {/* Enhanced scan line with particle trail */}
+          {stage >= 1 && (
+            <div className="relative w-full max-w-2xl mb-12 mt-6">
+              <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-red-600 to-transparent animate-scan shadow-[0_0_20px_rgba(220,38,38,0.9)]"></div>
+              {/* Particle effects with trails */}
+              <div className="absolute top-0 left-0 w-3 h-3 bg-red-500 rounded-full animate-particle-1 shadow-[0_0_15px_rgba(239,68,68,1)] blur-[1px]"></div>
+              <div className="absolute top-0 right-0 w-3 h-3 bg-red-400 rounded-full animate-particle-2 shadow-[0_0_15px_rgba(248,113,113,1)] blur-[1px]"></div>
+              <div className="absolute top-0 left-1/2 w-2 h-2 bg-red-300 rounded-full animate-particle-3 shadow-[0_0_10px_rgba(252,165,165,1)] blur-[1px]"></div>
+            </div>
+          )}
+          
+          {stage >= 3 && (
+            <div className="animate-tracking text-center">
+              <p className="text-zinc-400 text-sm md:text-base font-mono font-bold uppercase tracking-wide mb-3">
+                The Official College Sports Platform
+              </p>
+              {/* Enhanced status indicator with ring pulse */}
+              <div className="flex items-center justify-center gap-3 mt-6">
+                <div className="relative">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(34,197,94,1)]"></div>
+                  <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-75"></div>
+                </div>
+                <span className="text-xs text-green-400 font-mono font-bold tracking-widest uppercase">System Online</span>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* CSS animations for splash */}
+        <style>{`
+          @keyframes grid-pulse {
+            0%, 100% { opacity: 0.15; transform: scale(1); }
+            50% { opacity: 0.25; transform: scale(1.02); }
+          }
+          
+          @keyframes beam-1 {
+            0%, 100% { opacity: 0; transform: translateY(-100%) skewX(-12deg); }
+            50% { opacity: 1; transform: translateY(100%) skewX(-12deg); }
+          }
+          
+          @keyframes beam-2 {
+            0%, 100% { opacity: 0; transform: translateY(-100%) skewX(12deg); }
+            50% { opacity: 1; transform: translateY(100%) skewX(12deg); }
+          }
+          
+          @keyframes beam-3 {
+            0%, 100% { opacity: 0; transform: translateY(-100%); }
+            50% { opacity: 1; transform: translateY(100%); }
+          }
+          
+          @keyframes glitch-1 {
+            0%, 100% { transform: translate(0); clip-path: inset(0); }
+            20% { transform: translate(-3px, 2px); clip-path: inset(0 0 80% 0); }
+            40% { transform: translate(-3px, -2px); clip-path: inset(60% 0 0 0); }
+            60% { transform: translate(3px, 2px); clip-path: inset(30% 0 30% 0); }
+            80% { transform: translate(2px, -2px); clip-path: inset(0 0 50% 0); }
+          }
+          
+          @keyframes glitch-2 {
+            0%, 100% { transform: translate(0); clip-path: inset(0); }
+            25% { transform: translate(2px, -2px); clip-path: inset(20% 0 60% 0); }
+            50% { transform: translate(-2px, 2px); clip-path: inset(50% 0 0 0); }
+            75% { transform: translate(2px, 2px); clip-path: inset(0 0 70% 0); }
+          }
+          
+          @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+          
+          @keyframes particle-1 {
+            0% { transform: translate(0, 0) scale(1); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 0.8; }
+            100% { transform: translate(-250px, -60px) scale(0.3); opacity: 0; }
+          }
+          
+          @keyframes particle-2 {
+            0% { transform: translate(0, 0) scale(1); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 0.8; }
+            100% { transform: translate(250px, -60px) scale(0.3); opacity: 0; }
+          }
+          
+          @keyframes particle-3 {
+            0% { transform: translate(0, 0) scale(1); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 0.6; }
+            100% { transform: translate(0, -80px) scale(0.2); opacity: 0; }
+          }
+        `}</style>
       </div>
     );
   }
